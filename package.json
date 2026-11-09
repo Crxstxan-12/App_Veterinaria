@@ -1,0 +1,19 @@
+{
+  "name": "vetconecta",
+  "version": "1.0.0",
+  "description": "VetConecta - Plataforma de registro y gestion de mascotas para clinica veterinaria",
+  "type": "commonjs",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "seed": "node src/seed.js",
+    "reset": "node src/seed.js --reset"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "express": "^4.21.2"
+  }
+}

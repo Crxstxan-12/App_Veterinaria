@@ -1,0 +1,138 @@
+<%- include('partials/head', { titulo: titulo }) %>
+
+<div class="hero mb-4">
+  <h2>Hola, <%= usuario.nombre.split(' ')[0] %> 👋</h2>
+  <p class="mb-0" style="opacity:.92">
+    Resumen de la operación de hoy, <strong><%= formatDate(hoy) %></strong>.
+    Rol activo: <strong><%= etiquetaRol(usuario.rol) %></strong>.
+  </p>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3">
+    <div class="card stat-card h-100"><div class="card-body d-flex align-items-center gap-3">
+      <div class="stat-icon bg-grad-teal"><i class="bi bi-piggy-bank"></i></div>
+      <div><div class="stat-value"><%= stats.mascotas %></div><div class="stat-label">Mascotas activas</div></div>
+    </div></div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="card stat-card h-100"><div class="card-body d-flex align-items-center gap-3">
+      <div class="stat-icon bg-grad-blue"><i class="bi bi-people"></i></div>
+      <div><div class="stat-value"><%= stats.tutores %></div><div class="stat-label">Tutores</div></div>
+    </div></div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="card stat-card h-100"><div class="card-body d-flex align-items-center gap-3">
+      <div class="stat-icon bg-grad-violet"><i class="bi bi-calendar-check"></i></div>
+      <div><div class="stat-value"><%= stats.citasHoy %></div><div class="stat-label">Citas para hoy</div></div>
+    </div></div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="card stat-card h-100"><div class="card-body d-flex align-items-center gap-3">
+      <div class="stat-icon bg-grad-amber"><i class="bi bi-bell"></i></div>
+      <div><div class="stat-value"><%= stats.recordatorios %></div><div class="stat-label">Recordatorios pendientes</div></div>
+    </div></div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-7">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-bar-chart-line me-2"></i>Citas en los próximos 7 días</span>
+        <a href="/citas" class="btn btn-sm btn-outline-primary">Ver agenda</a>
+      </div>
+      <div class="card-body">
+        <div class="mini-bar">
+          <% serie.forEach(function (s) { %>
+            <div class="bar-wrap" title="<%= formatDate(s.fecha) %>: <%= s.n %> cita(s)">
+              <div class="fw-bold small"><%= s.n %></div>
+              <div class="bar" style="height:<%= Math.round((s.n / maxSerie) * 100) %>%"></div>
+              <div class="bar-lbl"><%= DIAS[(new Date(s.fecha + 'T00:00:00').getDay() + 6) % 7].slice(0,3) %></div>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-pie-chart me-2"></i>Mascotas por especie</div>
+      <div class="card-body">
+        <% if (porEspecie.length === 0) { %>
+          <div class="empty-state"><i class="bi bi-inbox"></i>Sin datos</div>
+        <% } else { %>
+          <% const total = porEspecie.reduce((a, b) => a + b.n, 0); %>
+          <% porEspecie.forEach(function (e) { const pct = Math.round((e.n / total) * 100); %>
+            <div class="mb-3">
+              <div class="d-flex justify-content-between small mb-1">
+                <span class="fw-semibold"><%= e.especie %></span>
+                <span class="text-muted"><%= e.n %> · <%= pct %>%</span>
+              </div>
+              <div class="progress" style="height:9px">
+                <div class="progress-bar" style="width:<%= pct %>%;background:linear-gradient(90deg,#2dd4bf,#0f766e)"></div>
+              </div>
+            </div>
+          <% }); %>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-calendar2-week me-2"></i>Próximas citas</div>
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead><tr><th>Fecha</th><th>Hora</th><th>Mascota</th><th>Tutor</th><th>Estado</th></tr></thead>
+          <tbody>
+            <% if (proximas.length === 0) { %>
+              <tr><td colspan="5"><div class="empty-state"><i class="bi bi-calendar-x"></i>No hay citas próximas</div></td></tr>
+            <% } %>
+            <% proximas.forEach(function (c) { const e = estadoCita(c.estado); %>
+              <tr>
+                <td><%= formatDate(c.fecha) %></td>
+                <td class="fw-semibold"><%= c.hora %></td>
+                <td>
+                  <a href="/mascotas/<%= c.mascota_id %>" class="text-decoration-none fw-semibold"><%= c.mascota %></a>
+                  <div class="text-muted small"><%= c.especie %></div>
+                </td>
+                <td><%= c.tutor %><div class="text-muted small"><%= c.tutor_telefono %></div></td>
+                <td><span class="badge badge-soft <%= e.clase %>"><%= e.texto %></span></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-clock-history me-2"></i>Registros recientes</span>
+        <a href="/mascotas" class="btn btn-sm btn-outline-primary">Ver todas</a>
+      </div>
+      <div class="card-body">
+        <% if (recientes.length === 0) { %>
+          <div class="empty-state"><i class="bi bi-inbox"></i>Sin mascotas registradas</div>
+        <% } %>
+        <% recientes.forEach(function (m) { %>
+          <a href="/mascotas/<%= m.id %>" class="d-flex align-items-center gap-3 text-decoration-none text-body py-2 border-bottom">
+            <div class="avatar-pet"><%= m.especie === 'Gato' ? '🐱' : m.especie === 'Perro' ? '🐶' : m.especie === 'Ave' ? '🐦' : '🐾' %></div>
+            <div class="flex-grow-1">
+              <div class="fw-semibold"><%= m.nombre %> <span class="text-muted small">· <%= m.especie %></span></div>
+              <div class="text-muted small"><i class="bi bi-person me-1"></i><%= m.tutor %></div>
+            </div>
+            <i class="bi bi-chevron-right text-muted"></i>
+          </a>
+        <% }); %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/foot') %>

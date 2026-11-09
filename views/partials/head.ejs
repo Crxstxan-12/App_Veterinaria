@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= titulo %> · VetConecta</title>
+  <meta name="description" content="VetConecta - Plataforma de registro y gestión de mascotas para clínica veterinaria.">
+  <link href="/static/vendor/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/static/vendor/css/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="/static/css/styles.css" rel="stylesheet">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo"><i class="bi bi-heart-pulse-fill"></i></div>
+      <div>
+        <h1>VetConecta</h1>
+        <small>Gestión veterinaria</small>
+      </div>
+    </div>
+
+    <div class="nav-title">Principal</div>
+    <a class="nav-link <%= rutaActual === '/panel' ? 'active' : '' %>" href="/panel">
+      <i class="bi bi-speedometer2"></i> Panel
+    </a>
+    <a class="nav-link <%= rutaActual === '/citas' ? 'active' : '' %>" href="/citas">
+      <i class="bi bi-calendar2-week"></i> Agenda de citas
+    </a>
+    <a class="nav-link <%= rutaActual === '/busqueda' ? 'active' : '' %>" href="/busqueda">
+      <i class="bi bi-search"></i> Búsqueda
+    </a>
+
+    <div class="nav-title">Registros</div>
+    <a class="nav-link <%= rutaActual === '/mascotas' || rutaActual.startsWith('/mascotas/') ? 'active' : '' %>" href="/mascotas">
+      <i class="bi bi-piggy-bank"></i> Mascotas
+    </a>
+    <a class="nav-link <%= rutaActual === '/tutores' ? 'active' : '' %>" href="/tutores">
+      <i class="bi bi-people"></i> Tutores
+    </a>
+    <a class="nav-link <%= rutaActual === '/recordatorios' ? 'active' : '' %>" href="/recordatorios">
+      <i class="bi bi-bell"></i> Recordatorios
+    </a>
+
+    <% if (esAdmin(usuario)) { %>
+      <div class="nav-title">Administración</div>
+      <a class="nav-link <%= rutaActual === '/usuarios' ? 'active' : '' %>" href="/usuarios">
+        <i class="bi bi-shield-lock"></i> Usuarios y accesos
+      </a>
+      <a class="nav-link <%= rutaActual === '/configuracion' ? 'active' : '' %>" href="/configuracion">
+        <i class="bi bi-gear"></i> Configuración
+      </a>
+    <% } %>
+
+    <div class="mt-4 px-2">
+      <div class="d-flex align-items-center gap-2 text-white-50" style="font-size:.78rem">
+        <i class="bi bi-info-circle"></i>
+        <span>Versión 1.0 · MVP</span>
+      </div>
+    </div>
+  </aside>
+
+  <div class="app-main">
+    <header class="topbar">
+      <div class="flex-grow-1">
+        <div class="page-title"><%= titulo %></div>
+        <div class="page-sub"><%= config.clinica_nombre || 'Clínica Veterinaria VetConecta' %></div>
+      </div>
+
+      <form class="d-none d-md-flex search-bar" action="/busqueda" method="get" role="search">
+        <input class="form-control" type="search" name="q" placeholder="Buscar mascota, tutor o teléfono…"
+               value="<%= typeof q !== 'undefined' && rutaActual === '/busqueda' ? q : '' %>" style="min-width:260px">
+        <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i></button>
+      </form>
+
+      <div class="dropdown">
+        <button class="btn btn-light border d-flex align-items-center gap-2" data-bs-toggle="dropdown">
+          <span class="d-none d-sm-inline"><%= usuario ? usuario.nombre : '' %></span>
+          <i class="bi bi-person-circle fs-5 text-secondary"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow">
+          <li class="px-3 py-2">
+            <div class="fw-semibold"><%= usuario ? usuario.nombre : '' %></div>
+            <div class="text-muted small"><%= usuario ? usuario.email : '' %></div>
+            <span class="badge badge-soft badge-primary mt-1"><%= usuario ? etiquetaRol(usuario.rol) : '' %></span>
+          </li>
+          <li><hr class="dropdown-divider"></li>
+          <li>
+            <form action="/logout" method="post">
+              <button class="dropdown-item text-danger" type="submit"><i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión</button>
+            </form>
+          </li>
+        </ul>
+      </div>
+    </header>
+
+    <main class="content">
+      <% if (flash.ok) { %>
+        <div class="alert alert-success alert-dismissible alert-auto show d-flex align-items-center" role="alert">
+          <i class="bi bi-check-circle-fill me-2"></i><%= flash.ok %>
+          <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+        </div>
+      <% } %>
+      <% if (flash.err) { %>
+        <div class="alert alert-danger alert-dismissible alert-auto show d-flex align-items-center" role="alert">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i><%= flash.err %>
+          <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+        </div>
+      <% } %>

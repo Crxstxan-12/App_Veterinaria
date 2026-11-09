@@ -1,0 +1,226 @@
+<%- include('partials/head', { titulo: titulo }) %>
+<%
+  const puedeEditar = esAdmin(usuario) || usuario.rol === 'recepcion';
+  const puedeClinica = esAdmin(usuario) || usuario.rol === 'veterinario';
+  const icono = mascota.especie === 'Gato' ? '🐱' : mascota.especie === 'Perro' ? '🐶'
+              : mascota.especie === 'Ave' ? '🐦' : mascota.especie === 'Conejo' ? '🐰' : '🐾';
+%>
+
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/mascotas" class="text-decoration-none">Mascotas</a></li>
+    <li class="breadcrumb-item active"><%= mascota.nombre %></li>
+  </ol>
+</nav>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="d-flex flex-wrap align-items-center gap-4">
+      <div class="avatar-pet" style="width:82px;height:82px;flex:0 0 82px;font-size:2.4rem;border-radius:22px"><%= icono %></div>
+      <div class="flex-grow-1">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <h3 class="mb-0 fw-bold"><%= mascota.nombre %></h3>
+          <% if (mascota.estado === 'activo') { %><span class="badge badge-soft badge-ok">Activo</span>
+          <% } else { %><span class="badge badge-soft badge-muted"><%= mascota.estado %></span><% } %>
+        </div>
+        <div class="text-muted mt-1">
+          <%= mascota.especie %><%= mascota.raza ? ' · ' + mascota.raza : '' %>
+          <%= mascota.sexo ? ' · ' + mascota.sexo : '' %>
+          <%= edad ? ' · ' + edad : '' %>
+        </div>
+        <div class="mt-2 d-flex flex-wrap gap-3 small">
+          <span><i class="bi bi-person me-1 text-muted"></i><%= mascota.tutor %></span>
+          <span><i class="bi bi-telephone me-1 text-muted"></i><%= mascota.tutor_telefono %></span>
+          <% if (mascota.microchip) { %><span><i class="bi bi-upc-scan me-1 text-muted"></i><%= mascota.microchip %></span><% } %>
+          <% if (mascota.peso) { %><span><i class="bi bi-speedometer me-1 text-muted"></i><%= mascota.peso %> kg</span><% } %>
+        </div>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <a href="/citas" class="btn btn-outline-primary"><i class="bi bi-calendar-plus me-1"></i> Agendar cita</a>
+        <% if (puedeEditar) { %>
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalMascota"
+                  data-fill="#modalMascota" data-action="/mascotas/<%= mascota.id %>"
+                  data-json='<%= JSON.stringify({nombre:mascota.nombre, especie:mascota.especie, raza:mascota.raza||"", sexo:mascota.sexo||"", color:mascota.color||"", fecha_nacimiento:mascota.fecha_nacimiento||"", peso:mascota.peso==null?"":mascota.peso, microchip:mascota.microchip||"", tutor_id:mascota.tutor_id, estado:mascota.estado, notas:mascota.notas||""}) %>'>
+            <i class="bi bi-pencil me-1"></i> Editar
+          </button>
+        <% } %>
+      </div>
+    </div>
+    <% if (mascota.notas) { %>
+      <div class="alert alert-light border mt-3 mb-0"><i class="bi bi-info-circle me-1"></i><%= mascota.notas %></div>
+    <% } %>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-clipboard2-pulse me-2"></i>Antecedentes veterinarios</span>
+        <% if (puedeClinica) { %>
+          <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalAntecedente">
+            <i class="bi bi-plus-lg me-1"></i> Nuevo registro
+          </button>
+        <% } %>
+      </div>
+      <div class="card-body">
+        <% if (antecedentes.length === 0) { %>
+          <div class="empty-state"><i class="bi bi-clipboard-x"></i>Esta mascota aún no tiene antecedentes clínicos</div>
+        <% } %>
+        <% antecedentes.forEach(function (a) { %>
+          <div class="timeline-item">
+            <div class="d-flex flex-column align-items-start gap-1">
+              <span class="badge badge-soft badge-primary"><%= a.tipo %></span>
+              <span class="text-muted small text-nowrap"><%= formatDate(a.fecha) %></span>
+            </div>
+            <div class="flex-grow-1">
+              <% if (a.motivo) { %><div><strong>Motivo:</strong> <%= a.motivo %></div><% } %>
+              <% if (a.diagnostico) { %><div class="text-muted"><strong>Diagnóstico:</strong> <%= a.diagnostico %></div><% } %>
+              <% if (a.tratamiento) { %><div class="text-muted"><strong>Tratamiento:</strong> <%= a.tratamiento %></div><% } %>
+              <% if (a.observaciones) { %><div class="text-muted small mt-1"><i class="bi bi-chat-left-text me-1"></i><%= a.observaciones %></div><% } %>
+              <div class="small text-muted mt-1">
+                <% if (a.peso) { %><span class="me-3"><i class="bi bi-speedometer2"></i> <%= a.peso %> kg</span><% } %>
+                <% if (a.temperatura) { %><span class="me-3"><i class="bi bi-thermometer-half"></i> <%= a.temperatura %>°C</span><% } %>
+                <% if (a.profesional) { %><span><i class="bi bi-person-badge"></i> <%= a.profesional %></span><% } %>
+              </div>
+            </div>
+            <% if (esAdmin(usuario)) { %>
+              <form action="/antecedentes/<%= a.id %>/eliminar" method="post" data-confirm="¿Eliminar este antecedente?">
+                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+              </form>
+            <% } %>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-calendar2-week me-2"></i>Citas de la mascota</div>
+      <div class="card-body">
+        <% if (citas.length === 0) { %>
+          <div class="empty-state"><i class="bi bi-calendar-x"></i>Sin citas registradas</div>
+        <% } %>
+        <% citas.forEach(function (c) { const e = estadoCita(c.estado); %>
+          <div class="d-flex align-items-center gap-3 py-2 border-bottom">
+            <div class="text-center" style="min-width:64px">
+              <div class="fw-bold"><%= c.hora %></div>
+              <div class="text-muted small"><%= formatDate(c.fecha) %></div>
+            </div>
+            <div class="flex-grow-1">
+              <div><%= c.motivo || 'Consulta' %></div>
+              <div class="text-muted small"><i class="bi bi-person-badge me-1"></i><%= c.profesional || 'Sin asignar' %></div>
+            </div>
+            <span class="badge badge-soft <%= e.clase %>"><%= e.texto %></span>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% if (puedeEditar) { %>
+<div class="modal fade" id="modalMascota" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <form action="/mascotas/<%= mascota.id %>" method="post">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Editar ficha</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Nombre *</label>
+              <input class="form-control" name="nombre" required maxlength="60" value="<%= mascota.nombre %>">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Tutor responsable *</label>
+              <select class="form-select" name="tutor_id" required>
+                <% tutores.forEach(function (t) { %>
+                  <option value="<%= t.id %>" <%= t.id === mascota.tutor_ref ? 'selected' : '' %>><%= t.nombre %> <%= t.apellido %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Especie *</label>
+              <select class="form-select" name="especie" required>
+                <% ESPECIES.forEach(function (e) { %><option value="<%= e %>" <%= mascota.especie === e ? 'selected' : '' %>><%= e %></option><% }); %>
+              </select>
+            </div>
+            <div class="col-md-4"><label class="form-label">Raza</label><input class="form-control" name="raza" value="<%= mascota.raza || '' %>"></div>
+            <div class="col-md-4">
+              <label class="form-label">Sexo</label>
+              <select class="form-select" name="sexo">
+                <option value="">Seleccione…</option>
+                <option <%= mascota.sexo === 'Macho' ? 'selected' : '' %>>Macho</option>
+                <option <%= mascota.sexo === 'Hembra' ? 'selected' : '' %>>Hembra</option>
+              </select>
+            </div>
+            <div class="col-md-4"><label class="form-label">Color</label><input class="form-control" name="color" value="<%= mascota.color || '' %>"></div>
+            <div class="col-md-4"><label class="form-label">Fecha de nacimiento</label><input class="form-control" type="date" name="fecha_nacimiento" value="<%= mascota.fecha_nacimiento || '' %>"></div>
+            <div class="col-md-4"><label class="form-label">Peso (kg)</label><input class="form-control" type="number" step="0.01" min="0" name="peso" value="<%= mascota.peso == null ? '' : mascota.peso %>"></div>
+            <div class="col-md-6"><label class="form-label">Microchip</label><input class="form-control" name="microchip" value="<%= mascota.microchip || '' %>"></div>
+            <div class="col-md-6">
+              <label class="form-label">Estado</label>
+              <select class="form-select" name="estado">
+                <% ESTADOS.forEach(function (e) { %><option value="<%= e %>" <%= mascota.estado === e ? 'selected' : '' %>><%= e %></option><% }); %>
+              </select>
+            </div>
+            <div class="col-12"><label class="form-label">Notas</label><textarea class="form-control" name="notas" rows="2"><%= mascota.notas || '' %></textarea></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i> Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<% if (puedeClinica) { %>
+<div class="modal fade" id="modalAntecedente" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <form action="/antecedentes" method="post">
+        <input type="hidden" name="mascota_id" value="<%= mascota.id %>">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-clipboard2-plus me-2"></i>Nuevo antecedente clínico</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Tipo de atención *</label>
+              <select class="form-select" name="tipo" required>
+                <% ['Consulta','Vacuna','Desparasitación','Cirugía','Examen','Control','Otro'].forEach(function (t) { %>
+                  <option><%= t %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Fecha</label>
+              <input class="form-control" type="date" name="fecha" data-default-today>
+            </div>
+            <div class="col-12"><label class="form-label">Motivo</label><input class="form-control" name="motivo" maxlength="160"></div>
+            <div class="col-12"><label class="form-label">Diagnóstico</label><input class="form-control" name="diagnostico" maxlength="200"></div>
+            <div class="col-12"><label class="form-label">Tratamiento</label><input class="form-control" name="tratamiento" maxlength="200"></div>
+            <div class="col-md-6"><label class="form-label">Peso (kg)</label><input class="form-control" type="number" step="0.01" min="0" name="peso"></div>
+            <div class="col-md-6"><label class="form-label">Temperatura (°C)</label><input class="form-control" type="number" step="0.1" min="0" name="temperatura"></div>
+            <div class="col-12"><label class="form-label">Observaciones</label><textarea class="form-control" name="observaciones" rows="2" maxlength="400"></textarea></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i> Registrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<%- include('partials/foot') %>

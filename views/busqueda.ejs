@@ -1,0 +1,93 @@
+<%- include('partials/head', { titulo: titulo }) %>
+<% const icono = (e) => e === 'Gato' ? '🐱' : e === 'Perro' ? '🐶' : e === 'Ave' ? '🐦' : '🐾'; %>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form class="d-flex search-bar" action="/busqueda" method="get">
+      <input class="form-control form-control-lg" type="search" name="q" value="<%= q %>" autofocus
+             placeholder="Buscar por nombre de mascota, nombre del tutor o teléfono…">
+      <button class="btn btn-primary px-4" type="submit"><i class="bi bi-search me-1"></i>Buscar</button>
+    </form>
+    <div class="text-muted small mt-2">
+      Permite localizar registros por nombre de mascota, nombre del tutor o número de teléfono.
+    </div>
+  </div>
+</div>
+
+<% if (!q) { %>
+  <div class="card"><div class="card-body">
+    <div class="empty-state"><i class="bi bi-search"></i>Ingrese un término para comenzar la búsqueda</div>
+  </div></div>
+<% } else { %>
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <span class="chip"><i class="bi bi-funnel"></i>Resultados para "<%= q %>"</span>
+    <span class="badge badge-soft badge-primary"><%= total %> coincidencia(s)</span>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-header"><i class="bi bi-piggy-bank me-2"></i>Mascotas <span class="badge badge-soft badge-primary ms-2"><%= mascotas.length %></span></div>
+        <div class="card-body">
+          <% if (mascotas.length === 0) { %><div class="empty-state"><i class="bi bi-inbox"></i>Sin coincidencias</div><% } %>
+          <% mascotas.forEach(function (m) { %>
+            <a href="/mascotas/<%= m.id %>" class="d-flex align-items-center gap-3 text-decoration-none text-body py-2 border-bottom">
+              <div class="avatar-pet"><%= icono(m.especie) %></div>
+              <div class="flex-grow-1">
+                <div class="fw-semibold"><%= m.nombre %> <span class="text-muted small">· <%= m.especie %></span></div>
+                <div class="text-muted small"><i class="bi bi-person me-1"></i><%= m.tutor %> · <%= m.tutor_telefono %></div>
+              </div>
+              <i class="bi bi-chevron-right text-muted"></i>
+            </a>
+          <% }); %>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-header"><i class="bi bi-people me-2"></i>Tutores <span class="badge badge-soft badge-primary ms-2"><%= tutores.length %></span></div>
+        <div class="card-body">
+          <% if (tutores.length === 0) { %><div class="empty-state"><i class="bi bi-inbox"></i>Sin coincidencias</div><% } %>
+          <% tutores.forEach(function (t) { %>
+            <div class="py-2 border-bottom">
+              <div class="fw-semibold"><%= t.nombre %> <%= t.apellido %></div>
+              <div class="text-muted small">
+                <i class="bi bi-telephone me-1"></i><%= t.telefono %>
+                <% if (t.email) { %> · <i class="bi bi-envelope me-1"></i><%= t.email %><% } %>
+                <% if (t.documento) { %> · <%= t.documento %><% } %>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header"><i class="bi bi-calendar2-week me-2"></i>Citas relacionadas <span class="badge badge-soft badge-primary ms-2"><%= citas.length %></span></div>
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead><tr><th>Fecha</th><th>Hora</th><th>Mascota</th><th>Tutor</th><th>Estado</th></tr></thead>
+            <tbody>
+              <% if (citas.length === 0) { %>
+                <tr><td colspan="5"><div class="empty-state"><i class="bi bi-inbox"></i>Sin coincidencias</div></td></tr>
+              <% } %>
+              <% citas.forEach(function (c) { const e = estadoCita(c.estado); %>
+                <tr>
+                  <td><%= formatDate(c.fecha) %></td>
+                  <td class="fw-semibold"><%= c.hora %></td>
+                  <td><a href="/mascotas/<%= c.mascota_id %>" class="text-decoration-none fw-semibold"><%= c.mascota %></a></td>
+                  <td><%= c.tutor %></td>
+                  <td><span class="badge badge-soft <%= e.clase %>"><%= e.texto %></span></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+<% } %>
+
+<%- include('partials/foot') %>

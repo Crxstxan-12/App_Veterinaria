@@ -1,0 +1,82 @@
+<%- include('partials/head', { titulo: titulo }) %>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-building-gear me-2"></i>Datos de la clínica</div>
+      <div class="card-body">
+        <form action="/configuracion" method="post">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label">Nombre de la clínica</label>
+              <input class="form-control" name="clinica_nombre" value="<%= config.clinica_nombre || '' %>" maxlength="120">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Teléfono</label>
+              <input class="form-control" name="clinica_telefono" value="<%= config.clinica_telefono || '' %>" maxlength="30">
+            </div>
+            <div class="col-md-8">
+              <label class="form-label">Dirección</label>
+              <input class="form-control" name="clinica_direccion" value="<%= config.clinica_direccion || '' %>" maxlength="160">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Correo de contacto</label>
+              <input class="form-control" type="email" name="clinica_email" value="<%= config.clinica_email || '' %>" maxlength="80">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Horario de apertura</label>
+              <input class="form-control" type="time" name="horario_apertura" value="<%= config.horario_apertura || '09:00' %>">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Horario de cierre</label>
+              <input class="form-control" type="time" name="horario_cierre" value="<%= config.horario_cierre || '19:00' %>">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Duración por defecto de cita (min)</label>
+              <input class="form-control" type="number" min="5" max="240" step="5" name="duracion_cita" value="<%= config.duracion_cita || 30 %>">
+            </div>
+          </div>
+          <button class="btn btn-primary mt-4"><i class="bi bi-save me-1"></i> Guardar configuración</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header"><i class="bi bi-hdd-stack me-2"></i>Respaldo de información</div>
+      <div class="card-body">
+        <p class="text-muted mb-3">
+          Genere y descargue una copia completa de la base de datos del sistema. Se recomienda realizarlo periódicamente
+          para resguardar la información de tutores, mascotas, antecedentes y citas.
+        </p>
+        <a href="/configuracion/respaldo" class="btn btn-outline-primary">
+          <i class="bi bi-download me-1"></i> Descargar respaldo (.db)
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-journal-text me-2"></i>Registro de auditoría</div>
+      <div class="card-body">
+        <% if (auditoria.length === 0) { %>
+          <div class="empty-state"><i class="bi bi-journal"></i>Sin eventos registrados</div>
+        <% } %>
+        <% auditoria.forEach(function (a) { %>
+          <div class="d-flex gap-3 py-2 border-bottom">
+            <i class="bi bi-dot fs-3 lh-1 text-primary"></i>
+            <div>
+              <div class="fw-semibold small"><%= a.accion %></div>
+              <div class="text-muted small"><%= a.detalle %></div>
+              <div class="text-muted" style="font-size:.72rem">
+                <%= a.creado_en %><%= a.usuario ? ' · ' + a.usuario : '' %>
+              </div>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/foot') %>

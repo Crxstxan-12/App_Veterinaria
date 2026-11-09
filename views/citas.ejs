@@ -1,0 +1,178 @@
+<%- include('partials/head', { titulo: titulo }) %>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="week-strip mb-3">
+      <% semana.forEach(function (d) { %>
+        <a class="week-day <%= d.fecha === fecha ? 'active' : '' %>"
+           href="/citas?fecha=<%= d.fecha %><%= vetFiltro ? '&vet=' + vetFiltro : '' %>">
+          <div class="wd-name"><%= d.dia %></div>
+          <div class="wd-num"><%= d.numero %></div>
+          <div class="wd-count"><%= d.n %> cita(s)</div>
+        </a>
+      <% }); %>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 align-items-end justify-content-between">
+      <form class="d-flex flex-wrap gap-2 align-items-end" action="/citas" method="get">
+        <div>
+          <label class="form-label small text-muted mb-1">Fecha</label>
+          <input class="form-control" type="date" name="fecha" value="<%= fecha %>" onchange="this.form.submit()">
+        </div>
+        <div>
+          <label class="form-label small text-muted mb-1">Veterinario/a</label>
+          <select class="form-select" name="vet" onchange="this.form.submit()">
+            <option value="">Todos</option>
+            <% veterinarios.forEach(function (v) { %>
+              <option value="<%= v.id %>" <%= vetFiltro === v.id ? 'selected' : '' %>><%= v.nombre %></option>
+            <% }); %>
+          </select>
+        </div>
+      </form>
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCita" data-fill="#modalCita">
+        <i class="bi bi-calendar-plus me-1"></i> Nueva cita
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-calendar2-day me-2"></i><%= dayName(fecha) %> <%= formatDate(fecha) %></span>
+        <span class="badge badge-soft badge-primary"><%= citas.length %> cita(s)</span>
+      </div>
+      <div class="card-body">
+        <% if (citas.length === 0) { %>
+          <div class="empty-state"><i class="bi bi-calendar-x"></i>No hay citas agendadas para este día</div>
+        <% } %>
+        <% citas.forEach(function (c) { const e = estadoCita(c.estado); %>
+          <div class="timeline-item">
+            <div class="timeline-hour"><%= c.hora %></div>
+            <div class="flex-grow-1">
+              <div class="d-flex align-items-center gap-2 flex-wrap">
+                <a href="/mascotas/<%= c.mascota_id %>" class="fw-semibold text-decoration-none"><%= c.mascota %></a>
+                <span class="badge badge-soft <%= e.clase %>"><%= e.texto %></span>
+                <span class="text-muted small"><i class="bi bi-hourglass-split"></i> <%= c.duracion %> min</span>
+              </div>
+              <div class="text-muted small mt-1">
+                <i class="bi bi-person me-1"></i><%= c.tutor %> · <%= c.tutor_telefono %>
+                <i class="bi bi-person-badge ms-3 me-1"></i><%= c.veterinario || 'Sin asignar' %>
+              </div>
+              <% if (c.motivo) { %><div class="small mt-1"><i class="bi bi-chat-left-text me-1 text-muted"></i><%= c.motivo %></div><% } %>
+              <% if (c.notas) { %><div class="small text-muted mt-1"><i class="bi bi-sticky me-1"></i><%= c.notas %></div><% } %>
+            </div>
+            <div class="d-flex flex-column gap-1 align-items-end">
+              <form action="/citas/<%= c.id %>/estado" method="post">
+                <select class="form-select form-select-sm" name="estado" onchange="this.form.submit()" style="min-width:132px">
+                  <% ESTADOS.forEach(function (s) { const ee = estadoCita(s); %>
+                    <option value="<%= s %>" <%= c.estado === s ? 'selected' : '' %>><%= ee.texto %></option>
+                  <% }); %>
+                </select>
+              </form>
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalCita"
+                        data-fill="#modalCita" data-action="/citas/<%= c.id %>"
+                        data-json='<%= JSON.stringify({mascota_id:c.mascota_id, usuario_id:c.usuario_id, fecha:c.fecha, hora:c.hora, duracion:c.duracion, motivo:c.motivo||"", notas:c.notas||""}) %>'>
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <form action="/recordatorios/desde-cita/<%= c.id %>" method="post">
+                  <button class="btn btn-outline-primary" title="Crear recordatorio"><i class="bi bi-bell"></i></button>
+                </form>
+                <% if (esAdmin(usuario)) { %>
+                  <form action="/citas/<%= c.id %>/eliminar" method="post" data-confirm="¿Eliminar esta cita?">
+                    <button class="btn btn-outline-danger"><i class="bi bi-trash"></i></button>
+                  </form>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-lightbulb me-2"></i>Control de duplicidades</div>
+      <div class="card-body small text-muted">
+        <p>El sistema valida automáticamente que:</p>
+        <ul class="ps-3">
+          <li>Un/a veterinario/a no tenga dos citas superpuestas.</li>
+          <li>Una misma mascota no esté agendada dos veces a la misma hora.</li>
+        </ul>
+        <p class="mb-0">Si existe un choque de horario, la cita no se guarda y se muestra el detalle del conflicto.</p>
+        <hr>
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-clock-history fs-5 text-primary"></i>
+          <div>
+            <div class="fw-semibold text-body">Horario de atención</div>
+            <%= config.horario_apertura || '09:00' %> – <%= config.horario_cierre || '19:00' %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalCita" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <form action="/citas" method="post">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-calendar-plus me-2"></i>Agendar cita</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Mascota *</label>
+              <select class="form-select" name="mascota_id" required>
+                <option value="">Seleccione…</option>
+                <% mascotas.forEach(function (m) { %>
+                  <option value="<%= m.id %>"><%= m.nombre %> — <%= m.tutor %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Veterinario/a *</label>
+              <select class="form-select" name="usuario_id" required>
+                <option value="">Seleccione…</option>
+                <% veterinarios.forEach(function (v) { %>
+                  <option value="<%= v.id %>"><%= v.nombre %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Fecha *</label>
+              <input class="form-control" type="date" name="fecha" required value="<%= fecha %>">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Hora *</label>
+              <input class="form-control" type="time" name="hora" required value="<%= config.horario_apertura || '09:00' %>">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Duración (min)</label>
+              <input class="form-control" type="number" name="duracion" min="5" max="240" step="5" value="<%= config.duracion_cita || 30 %>">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Motivo</label>
+              <input class="form-control" name="motivo" maxlength="160" placeholder="Control, vacunación, revisión…">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Notas internas</label>
+              <textarea class="form-control" name="notas" rows="2" maxlength="300"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i> Guardar cita</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/foot') %>

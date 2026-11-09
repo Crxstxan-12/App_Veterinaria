@@ -1,0 +1,132 @@
+<%- include('partials/head', { titulo: titulo }) %>
+
+<div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-3">
+  <form class="d-flex flex-wrap gap-2 align-items-end" action="/recordatorios" method="get">
+    <div>
+      <label class="form-label small text-muted mb-1">Estado</label>
+      <select class="form-select" name="estado" onchange="this.form.submit()">
+        <option value="">Todos</option>
+        <option value="pendiente" <%= estadoF === 'pendiente' ? 'selected' : '' %>>Pendientes</option>
+        <option value="enviado" <%= estadoF === 'enviado' ? 'selected' : '' %>>Enviados</option>
+      </select>
+    </div>
+    <div>
+      <label class="form-label small text-muted mb-1">Canal</label>
+      <select class="form-select" name="canal" onchange="this.form.submit()">
+        <option value="">Todos</option>
+        <option value="whatsapp" <%= canalF === 'whatsapp' ? 'selected' : '' %>>WhatsApp</option>
+        <option value="email" <%= canalF === 'email' ? 'selected' : '' %>>Correo</option>
+      </select>
+    </div>
+  </form>
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalRecordatorio" data-fill="#modalRecordatorio">
+    <i class="bi bi-bell-fill me-1"></i> Nuevo recordatorio
+  </button>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-bell me-2"></i>Recordatorios</span>
+    <span class="badge badge-soft badge-primary"><%= recordatorios.length %> registro(s)</span>
+  </div>
+  <div class="card-body">
+    <% if (recordatorios.length === 0) { %>
+      <div class="empty-state"><i class="bi bi-bell-slash"></i>No hay recordatorios que mostrar</div>
+    <% } %>
+    <% recordatorios.forEach(function (r) { const e = estadoRecordatorio(r.estado); %>
+      <div class="d-flex flex-wrap gap-3 align-items-start py-3 border-bottom">
+        <div class="stat-icon <%= r.canal === 'whatsapp' ? 'bg-grad-green' : 'bg-grad-blue' %>"
+             style="width:44px;height:44px;font-size:1.2rem">
+          <i class="bi <%= r.canal === 'whatsapp' ? 'bi-whatsapp' : 'bi-envelope-fill' %>"></i>
+        </div>
+        <div class="flex-grow-1">
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <strong><%= r.tutor %></strong>
+            <span class="badge badge-soft <%= e.clase %>"><%= e.texto %></span>
+            <span class="badge badge-soft badge-muted"><%= r.canal %></span>
+            <% if (r.mascota) { %><span class="chip"><i class="bi bi-paw"></i><%= r.mascota %></span><% } %>
+          </div>
+          <div class="text-muted small mt-1">
+            <i class="bi bi-calendar-event me-1"></i>Programado: <%= formatDate(r.fecha_programada) %>
+            <% if (r.enviado_en) { %>· <i class="bi bi-send-check me-1"></i>Enviado: <%= r.enviado_en %><% } %>
+          </div>
+          <div class="mt-2 p-2 rounded" style="background:#f8fafc;border:1px solid var(--vc-border)">
+            <%= r.mensaje %>
+          </div>
+        </div>
+        <div class="d-flex flex-column gap-1">
+          <% if (r.estado === 'pendiente') { %>
+            <form action="/recordatorios/<%= r.id %>/enviar" method="post">
+              <button class="btn btn-sm btn-primary w-100"><i class="bi bi-send me-1"></i>Marcar enviado</button>
+            </form>
+          <% } %>
+          <% if (r.waLink && r.estado === 'pendiente') { %>
+            <a class="btn btn-sm btn-outline-success" href="<%= r.waLink %>" target="_blank" rel="noopener">
+              <i class="bi bi-whatsapp me-1"></i>Abrir WhatsApp
+            </a>
+          <% } %>
+          <form action="/recordatorios/<%= r.id %>/eliminar" method="post" data-confirm="¿Eliminar este recordatorio?">
+            <button class="btn btn-sm btn-outline-danger w-100"><i class="bi bi-trash me-1"></i>Eliminar</button>
+          </form>
+        </div>
+      </div>
+    <% }); %>
+  </div>
+</div>
+
+<div class="modal fade" id="modalRecordatorio" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form action="/recordatorios" method="post">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-bell-fill me-2"></i>Nuevo recordatorio</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Tutor *</label>
+              <select class="form-select" name="tutor_id" required>
+                <option value="">Seleccione…</option>
+                <% tutores.forEach(function (t) { %>
+                  <option value="<%= t.id %>"><%= t.nombre %> <%= t.apellido %> · <%= t.telefono %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Mascota (opcional)</label>
+              <select class="form-select" name="mascota_id">
+                <option value="">Sin especificar</option>
+                <% mascotas.forEach(function (m) { %>
+                  <option value="<%= m.id %>"><%= m.nombre %> — <%= m.tutor %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Canal</label>
+              <select class="form-select" name="canal">
+                <option value="whatsapp">WhatsApp</option>
+                <option value="email">Correo electrónico</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Fecha programada</label>
+              <input class="form-control" type="date" name="fecha_programada" value="<%= hoy %>">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Mensaje</label>
+              <textarea class="form-control" name="mensaje" rows="3"
+                        placeholder="Si lo deja vacío, se generará automáticamente."></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i> Programar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/foot') %>
